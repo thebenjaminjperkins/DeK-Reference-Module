@@ -33,15 +33,12 @@ project(dek-reference-module C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+add_subdirectory(external/DeK-Protocol EXCLUDE_FROM_ALL)
+
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(dek-reference-module
         dek-reference-module.c
-        protocol/dek_crc.c
-        protocol/dek_packet.c
-        protocol/packet_receiver.c
-        protocol/dek_transport.c
-        protocol/messages/dek_hello.c
 )
 
 pico_set_program_name(dek-reference-module "dek-reference-module")
@@ -58,16 +55,14 @@ target_link_libraries(dek-reference-module
 # Add the standard include files to the build
 target_include_directories(dek-reference-module PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${CMAKE_CURRENT_LIST_DIR}/protocol
-        ${CMAKE_CURRENT_LIST_DIR}/protocol/messages
 )
 
 # Add any user requested libraries
 target_link_libraries(dek-reference-module 
+        dek_protocol
         hardware_spi
         hardware_i2c
-        
-        )
+)
 
 pico_add_extra_outputs(dek-reference-module)
 
