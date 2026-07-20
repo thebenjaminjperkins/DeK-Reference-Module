@@ -35,7 +35,14 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(dek-reference-module dek-reference-module.c )
+add_executable(dek-reference-module
+        dek-reference-module.c
+        protocol/dek_crc.c
+        protocol/dek_packet.c
+        protocol/packet_receiver.c
+        protocol/dek_transport.c
+        protocol/messages/dek_hello.c
+)
 
 pico_set_program_name(dek-reference-module "dek-reference-module")
 pico_set_program_version(dek-reference-module "0.1")
@@ -51,6 +58,8 @@ target_link_libraries(dek-reference-module
 # Add the standard include files to the build
 target_include_directories(dek-reference-module PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/protocol
+        ${CMAKE_CURRENT_LIST_DIR}/protocol/messages
 )
 
 # Add any user requested libraries
