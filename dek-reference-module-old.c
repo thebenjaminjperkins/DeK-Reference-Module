@@ -263,11 +263,17 @@ static void spi_link_init(void)
     spi_init(DEK_SPI_PORT, DEK_SPI_INIT_BAUDRATE_HZ);
     spi_set_format(DEK_SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     spi_set_slave(DEK_SPI_PORT, true);
+    spi_set_baudrate(DEK_SPI_PORT, 1000000);
 
     gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
     gpio_set_function(PICO_DEFAULT_SPI_CSN_PIN, GPIO_FUNC_SPI);
+
+    while (spi_is_readable(DEK_SPI_PORT))
+    {
+        (void)spi_get_hw(DEK_SPI_PORT)->dr;
+    }
 }
 
 static void report_stats(const dek_module_state_t *state)
@@ -484,7 +490,7 @@ int main(void)
         sizeof(state.receiver_buffer));
 
     spi_link_init();
-    service_spi_tx_fifo(&state);
+    //service_spi_tx_fifo(&state);
 
     printf("SPI transport ready; idle byte is 0x%02X\n", DEK_SPI_IDLE_BYTE);
 
@@ -496,47 +502,14 @@ int main(void)
 
         while (spi_is_readable(DEK_SPI_PORT))
         {
-            dek_receiver_feed_status_t status;
-            uint8_t byte = (uint8_t)spi_get_hw(DEK_SPI_PORT)->dr;
+            uint8_t byte = spi_get_hw(DEK_SPI_PORT)->dr;
+
+            printf("RX: %02X  SR=%08lX\n",
+                byte,
+                (unsigned long)spi_get_hw(DEK_SPI_PORT)->sr);
 
             state.spi_bytes_received++;
             state.spi_bytes_transmitted++;
-            did_work = true;
-
-            status = dek_packet_receiver_feed(
-                &state.receiver,
-                byte,
-                &packet);
-
-            switch (status)
-            {
-                case DEK_RECEIVER_FEED_STATUS_SYNCING:
-                case DEK_RECEIVER_FEED_STATUS_IN_PROGRESS:
-                    break;
-
-                case DEK_RECEIVER_FEED_STATUS_PACKET_READY:
-                    state.transport.packets_received++;
-
-                    if (!dispatch_packet(&state, &packet))
-                    {
-                        state.dispatch_errors++;
-                    }
-                    break;
-
-                case DEK_RECEIVER_FEED_STATUS_INVALID_PACKET:
-                    state.receiver_invalid_packets++;
-                    printf("Receiver rejected the current packet\n");
-                    break;
-
-                case DEK_RECEIVER_FEED_STATUS_BUFFER_OVERFLOW:
-                    state.receiver_buffer_overflows++;
-                    printf(
-                        "Receiver overflowed the %u-byte packet buffer\n",
-                        DEK_PROTOCOL_RX_BUFFER_SIZE);
-                    break;
-            }
-
-            service_spi_tx_fifo(&state);
         }
 
         maybe_report_stats(&state);

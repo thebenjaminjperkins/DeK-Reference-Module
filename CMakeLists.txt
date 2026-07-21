@@ -38,7 +38,7 @@ add_subdirectory(external/DeK-Protocol EXCLUDE_FROM_ALL)
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(dek-reference-module
-        dek-reference-module.c
+        uart_link_smoke.c
 )
 
 pico_set_program_name(dek-reference-module "dek-reference-module")
@@ -60,8 +60,8 @@ target_include_directories(dek-reference-module PRIVATE
 # Add any user requested libraries
 target_link_libraries(dek-reference-module 
         dek_protocol
-        hardware_spi
-        hardware_i2c
+        hardware_uart
+        hardware_gpio
 )
 
 pico_add_extra_outputs(dek-reference-module)
